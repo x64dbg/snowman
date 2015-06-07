@@ -890,7 +890,12 @@ public:
                 /* sp is incremented in call instruction. */
 
                 if (detail_->op_count == 1) {
-                    _[regizter(sp) ^= regizter(sp) + operand(0)];
+                    auto operand0 = operand(0);
+                    if (operand0.size() < sp->size()) {
+                        _[regizter(sp) ^= regizter(sp) + zero_extend(std::move(operand0))];
+                    } else {
+                        _[regizter(sp) ^= regizter(sp) + std::move(operand0)];
+                    }
                 }
 
                 _[jump(regizter(ip))];
@@ -1282,6 +1287,8 @@ private:
         REG(XMM13, xmm13)
         REG(XMM14, xmm14)
         REG(XMM15, xmm15)
+        case X86_REG_EIP: return std::make_unique<core::ir::Constant>(
+            SizedValue(X86Registers::eip()->size(), instruction_->endAddr()));
         case X86_REG_RIP: return std::make_unique<core::ir::Constant>(
             SizedValue(X86Registers::rip()->size(), instruction_->endAddr()));
 
