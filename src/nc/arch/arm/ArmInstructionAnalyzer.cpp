@@ -67,14 +67,14 @@ public:
     {}
 
     void createStatements(const ArmInstruction *instruction, core::ir::Program *program) {
-        assert(instruction != NULL);
-        assert(program != NULL);
+        assert(instruction != nullptr);
+        assert(program != nullptr);
 
         program_ = program;
         instruction_ = instruction;
 
         instr_ = disassemble(instruction);
-        assert(instr_ != NULL);
+        assert(instr_ != nullptr);
         detail_ = &instr_->detail->arm;
 
         auto instructionBasicBlock = program_->getBasicBlockForInstruction(instruction_);
@@ -209,6 +209,19 @@ private:
             _[call(operand(0))];
             break;
         }
+        case ARM_INS_CMN: {
+            _[
+                n ^= intrinsic(),
+                c ^= unsigned_(operand(0)) < -operand(1),
+                z ^= operand(0) == -operand(1),
+                v ^= intrinsic(),
+
+                less             ^= signed_(operand(0)) < -operand(1),
+                less_or_equal    ^= signed_(operand(0)) <= -operand(1),
+                below_or_equal   ^= unsigned_(operand(0)) <= -operand(1)
+            ];
+            break;
+        }
         case ARM_INS_CMP: {
             _[
                 n ^= intrinsic(),
@@ -220,6 +233,19 @@ private:
                 less_or_equal    ^= signed_(operand(0)) <= operand(1),
                 below_or_equal   ^= unsigned_(operand(0)) <= operand(1)
             ];
+            break;
+        }
+        case ARM_INS_EOR: {
+            _[operand(0) ^= operand(1) ^ operand(2)];
+            if (!handleWriteToPC(bodyBasicBlock)) {
+                if (detail_->update_flags) {
+                    _[
+                        n ^= signed_(operand(0)) < constant(0),
+                        z ^= operand(0) == constant(0),
+                        c ^= intrinsic()
+                    ];
+                }
+            }
             break;
         }
         case ARM_INS_LDM: {
@@ -243,6 +269,7 @@ private:
         case ARM_INS_LDREX: { // TODO: atomic
             _[operand(0) ^= operand(1)];
             handleWriteback(bodyBasicBlock, 1);
+            handleWriteToPC(bodyBasicBlock);
             break;
         }
         case ARM_INS_LDRH:
@@ -250,12 +277,14 @@ private:
         case ARM_INS_LDREXH: { // TODO: atomic
             _[operand(0) ^= zero_extend(operand(1, 16))];
             handleWriteback(bodyBasicBlock, 1);
+            handleWriteToPC(bodyBasicBlock);
             break;
         }
         case ARM_INS_LDRSH:
         case ARM_INS_LDRSHT: {
             _[operand(0) ^= sign_extend(operand(1, 16))];
             handleWriteback(bodyBasicBlock, 1);
+            handleWriteToPC(bodyBasicBlock);
             break;
         }
         case ARM_INS_LDRB:
@@ -263,12 +292,14 @@ private:
         case ARM_INS_LDREXB: { // TODO: atomic
             _[operand(0) ^= zero_extend(operand(1, 8))];
             handleWriteback(bodyBasicBlock, 1);
+            handleWriteToPC(bodyBasicBlock);
             break;
         }
         case ARM_INS_LDRSB:
         case ARM_INS_LDRSBT: {
             _[operand(0) ^= sign_extend(operand(1, 8))];
             handleWriteback(bodyBasicBlock, 1);
+            handleWriteToPC(bodyBasicBlock);
             break;
         }
         // TODO case ARM_INS_LDRD:
@@ -292,6 +323,30 @@ private:
             auto location = reg->memoryLocation().resized(16);
             _[MemoryLocationExpression(location) ^= operand(1, 16)];
             handleWriteToPC(bodyBasicBlock);
+            break;
+        }
+        case ARM_INS_MUL: {
+            _[operand(0) ^= operand(1) * operand(2)];
+            if (detail_->update_flags) {
+                _[
+                    n ^= signed_(operand(0)) < constant(0),
+                    z ^= operand(0) == constant(0),
+                    c ^= intrinsic()
+                ];
+            }
+            break;
+        }
+        case ARM_INS_MVN: {
+            _[operand(0) ^= ~operand(1)];
+            if (!handleWriteToPC(bodyBasicBlock)) {
+                if (detail_->update_flags) {
+                    _[
+                        n ^= signed_(operand(0)) < constant(0),
+                        z ^= operand(0) == constant(0),
+                        c ^= intrinsic()
+                    ];
+                }
+            }
             break;
         }
         case ARM_INS_ORR: {
@@ -400,6 +455,22 @@ private:
                 z ^= (operand(0) & operand(1)) == constant(0),
                 c ^= intrinsic()
             ];
+            break;
+        }
+        case ARM_INS_UXTAB: {
+            _[operand(0) ^= zero_extend(operand(1, 8)) + operand(2)];
+            break;
+        }
+        case ARM_INS_UXTB: {
+            _[operand(0) ^= zero_extend(operand(1, 8))];
+            break;
+        }
+        case ARM_INS_UXTAH: {
+            _[operand(0) ^= zero_extend(operand(1, 16)) + operand(2)];
+            break;
+        }
+        case ARM_INS_UXTH: {
+            _[operand(0) ^= zero_extend(operand(1, 16))];
             break;
         }
         default: {
@@ -617,7 +688,7 @@ private:
     static std::unique_ptr<core::ir::Term> createShiftValue(const cs_arm_op &operand) {
         switch (operand.shift.type) {
             case ARM_SFT_INVALID:
-                return NULL;
+                return nullptr;
             case ARM_SFT_ASR: /* FALLTHROUGH */
             case ARM_SFT_LSL: /* FALLTHROUGH */
             case ARM_SFT_LSR: /* FALLTHROUGH */

@@ -25,8 +25,6 @@
 #include "X86Disassembler.h"
 
 #include <nc/common/CheckedCast.h>
-#include <nc/common/make_unique.h>
-#include <nc/common/Unreachable.h>
 
 #include "X86Architecture.h"
 #include "X86Instruction.h"
@@ -36,23 +34,25 @@ namespace arch {
 namespace x86 {
 
 X86Disassembler::X86Disassembler(const X86Architecture *architecture): core::arch::Disassembler(architecture) {
-    if (architecture->bitness() == 16) {
-        mode_ = CS_MODE_16;
-    } else if (architecture->bitness() == 32) {
-        mode_ = CS_MODE_32;
-    } else if (architecture->bitness() == 64) {
-        mode_ = CS_MODE_64;
-    } else {
-        unreachable();
-    }
-    capstone_ = std::make_unique<core::arch::Capstone>(CS_ARCH_X86, mode_);
+    ud_init(&ud_obj_);
+    ud_set_mode(&ud_obj_, architecture->bitness());
 }
 
 std::shared_ptr<core::arch::Instruction> X86Disassembler::disassembleSingleInstruction(ByteAddr pc, const void *buffer, ByteSize size) {
-    if (auto instr = capstone_->disassemble(pc, buffer, size, 1)) {
-        return std::make_shared<X86Instruction>(mode_, instr->address, instr->size, buffer);
+    ud_set_pc(&ud_obj_, pc);
+    ud_set_input_buffer(&ud_obj_, const_cast<uint8_t *>(static_cast<const uint8_t *>(buffer)), checked_cast<std::size_t>(size));
+
+    SmallByteSize instructionSize = ud_disassemble(&ud_obj_);
+    if (!instructionSize || ud_obj_.mnemonic == UD_Iinvalid) {
+        return nullptr;
     }
-    return nullptr;
+
+    if (instructionSize > X86Instruction::MAX_SIZE) {
+        /* Too many prefixes. Skip them. */
+        return nullptr;
+    }
+
+    return std::make_shared<X86Instruction>(ud_obj_.dis_mode, pc, instructionSize, buffer);
 }
 
 } // namespace x86

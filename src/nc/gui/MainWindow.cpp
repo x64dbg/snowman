@@ -268,7 +268,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 }
 
 void MainWindow::loadSettings() {
-    if (parent() == NULL) {
+    if (parent() == nullptr) {
         restoreGeometry(settings_->value("geometry", saveGeometry()).toByteArray());
     }
     restoreState(settings_->value("windowState", saveState()).toByteArray());
@@ -288,7 +288,7 @@ void MainWindow::loadSettings() {
 }
 
 void MainWindow::saveSettings() {
-    if (parent() == NULL) {
+    if (parent() == nullptr) {
         settings_->setValue("geometry", saveGeometry());
     }
     settings_->setValue("windowState", saveState());
@@ -308,10 +308,10 @@ void MainWindow::saveSettings() {
 }
 
 void MainWindow::updateGuiState() {
-    exportCfgAction_->setEnabled(project() != NULL);
-    disassembleAction_->setEnabled(project() != NULL);
-    decompileAction_->setEnabled(project() != NULL);
-    cancelAllAction_->setEnabled(project() != NULL && project()->commandQueue()->front() != NULL);
+    exportCfgAction_->setEnabled(project() != nullptr);
+    disassembleAction_->setEnabled(project() != nullptr);
+    decompileAction_->setEnabled(project() != nullptr);
+    cancelAllAction_->setEnabled(project() != nullptr && project()->commandQueue()->front() != nullptr);
 
     if (project() && !project()->name().isEmpty()) {
         setWindowTitle(tr("%1 - %2").arg(project()->name()).arg(branding_.applicationName()));
@@ -651,8 +651,8 @@ void MainWindow::about() {
         "<h3>About %1</h3>"
         "<p>%1 is a native code to C/C++ decompiler.</p>"
         "<p>This is version %2.</p>"
-        "<p>%1 supports the following architectures (powered by <a href=\"http://www.capstone-engine.org/\">Capstone</a>):<ul>"
-        "<li>ARM (little endian, big endian),</li>"
+        "<p>%1 supports the following architectures:<ul>"
+        "<li>ARM (little endian, big endian, powered by <a href=\"http://http://www.capstone-engine.org/\">Capstone</a>),</li>"
         "<li>Intel x86,</li>"
         "<li>Intel x86-64.</li>"
         "</ul></p>"
