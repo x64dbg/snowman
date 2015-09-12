@@ -32,18 +32,8 @@ namespace core {
 namespace likec {
 
 void DoWhile::doCallOnChildren(const std::function<void(TreeNode *)> &fun) {
-    fun(body());
+    fun(body_.get());
     fun(condition_.get());
-}
-
-DoWhile *DoWhile::rewrite() {
-    assert(condition_);
-    assert(body_);
-
-    rewriteChild(condition_);
-    rewriteChild(body_);
-
-    return this;
 }
 
 void DoWhile::doPrint(PrintContext &context) const {

@@ -68,18 +68,7 @@ IRGenerator::IRGenerator(const image::Image *image, const arch::Instructions *in
 IRGenerator::~IRGenerator() {}
 
 void IRGenerator::generate() {
-    auto instructionAnalyzer = image_->platform().architecture()->createInstructionAnalyzer();
-
-    /* Generate statements. */
-    foreach (const auto &instr, instructions_->all()) {
-        try {
-            instructionAnalyzer->createStatements(instr.get(), program_);
-        } catch (const InvalidInstructionException &e) {
-            /* Note: this is an AntiIdiom: http://c2.com/cgi/wiki?LoggingDiscussion */
-            log_.warning(e.unicodeWhat());
-        }
-        canceled_.poll();
-    }
+    image_->platform().architecture()->createInstructionAnalyzer()->createStatements(instructions_, program_, canceled_, log_);
 
 #ifndef NDEBUG
     /*
@@ -261,102 +250,6 @@ void IRGenerator::addJumpToDirectSuccessor(ir::BasicBlock *basicBlock) {
             }
         }
     }
-}
-
-std::unique_ptr<arch::Instructions> IRGenerator::explore(const image::Image *image, ByteAddr startAddress, bool followCalls, const CancellationToken &canceled, const LogToken &log) {
-    assert(image);
-
-    auto instructions = std::make_unique<arch::Instructions>();
-    ir::Program program;
-
-    auto disassembler = image->platform().architecture()->createDisassembler();
-    auto instructionAnalyzer = image->platform().architecture()->createInstructionAnalyzer();
-
-    auto exploreAddress = [&](ByteAddr address){
-        if (instructions->get(address)) {
-            return;
-        }
-
-        if (auto instruction = disassembler->disassembleSingleInstruction(address, image)) {
-            try {
-                instructionAnalyzer->createStatements(instruction.get(), &program);
-            } catch (const InvalidInstructionException &e) {
-                log.warning(e.unicodeWhat());
-            }
-            instructions->add(std::move(instruction));
-        }
-    };
-
-    exploreAddress(startAddress);
-
-    if (program.basicBlocks().empty()) {
-        return instructions;
-    }
-
-    IRGenerator generator(image, instructions.get(), &program, canceled, log);
-
-    auto exploreBasicBlock = [&](ir::BasicBlock *basicBlock){
-        while (basicBlock->successorAddress() && !basicBlock->getTerminator()) {
-            auto lastSuccessorAddress = basicBlock->successorAddress();
-            exploreAddress(*basicBlock->successorAddress());
-            if (basicBlock->successorAddress() == lastSuccessorAddress) {
-                break;
-            }
-            canceled.poll();
-        }
-
-        generator.computeJumpTargets(basicBlock);
-    };
-
-    std::queue<ir::BasicBlock *> queue;
-    boost::unordered_set<ir::BasicBlock *> enqueued;
-
-    auto enqueue = [&](ir::BasicBlock *basicBlock) {
-        if (!nc::contains(enqueued, basicBlock)) {
-            queue.push(basicBlock);
-            enqueued.insert(basicBlock);
-        }
-    };
-
-    auto enqueueJumpTarget = [&](const ir::JumpTarget &target) {
-        if (target.basicBlock()) {
-            enqueue(target.basicBlock());
-        } else if (target.table()) {
-            foreach(const auto &entry, *target.table()) {
-                if (entry.basicBlock()) {
-                    enqueue(entry.basicBlock());
-                }
-            }
-        }
-    };
-
-    auto enqueueJumpTargets = [&](const ir::Jump *jump){
-        enqueueJumpTarget(jump->thenTarget());
-        enqueueJumpTarget(jump->elseTarget());
-    };
-
-    enqueue(program.basicBlocks().front());
-
-    while (!queue.empty()) {
-        auto basicBlock = queue.front();
-        queue.pop();
-
-        exploreBasicBlock(basicBlock);
-
-        if (auto jump = basicBlock->getJump()) {
-            enqueueJumpTargets(jump);
-        }
-
-        if (followCalls && queue.empty()) {
-            foreach (auto address, program.calledAddresses()) {
-                enqueue(program.createBasicBlock(address));
-            }
-        }
-
-        canceled.poll();
-    }
-
-    return instructions;
 }
 
 } // namespace irgen
