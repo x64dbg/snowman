@@ -56,6 +56,7 @@
 #include <nc/core/likec/Tree.h>
 #include <nc/core/likec/Typecast.h>
 #include <nc/core/likec/UnaryOperator.h>
+#include <nc/core/likec/UndeclaredIdentifier.h>
 #include <nc/core/likec/VariableIdentifier.h>
 #include <nc/core/likec/While.h>
 
@@ -252,13 +253,6 @@ void expand(InspectorItem *item, const core::ir::Term *term, const core::Context
             item->addChild(tr("right"), binary->right());
             break;
         }
-        case core::ir::Term::CHOICE: {
-            auto *choice = term->asChoice();
-            item->addComment(tr("Choice"));
-            item->addChild(tr("preferred term"), choice->preferredTerm());
-            item->addChild(tr("default term"), choice->defaultTerm());
-            break;
-        }
         default: {
             item->addChild(tr("kind = %1").arg(term->kind()));
             break;
@@ -275,7 +269,7 @@ void expand(InspectorItem *item, const core::likec::Declaration *declaration) {
         case core::likec::Declaration::FUNCTION_DEFINITION: {
             const core::likec::FunctionDefinition *functionDefinition = declaration->as<core::likec::FunctionDefinition>();
             item->addComment(tr("Function Definition"));
-            item->addChild(tr("block"), functionDefinition->block().get());
+            item->addChild(tr("block"), functionDefinition->block());
             break;
         }
         case core::likec::Declaration::LABEL_DECLARATION: {
@@ -376,6 +370,13 @@ void expand(InspectorItem *item, const core::likec::Expression *expression) {
             auto identifier = expression->as<core::likec::VariableIdentifier>();
             item->addComment(tr("Variable Identifier"));
             item->addChild(tr("declaration"), identifier->declaration());
+            break;
+        }
+        case core::likec::Expression::UNDECLARED_IDENTIFIER: {
+            auto identifier = expression->as<core::likec::UndeclaredIdentifier>();
+            item->addComment(tr("Undeclared Identifier"));
+            item->addChild(tr("name = %1").arg(identifier->name()));
+            item->addChild(tr("type = %1").arg(identifier->type()->toString()));
             break;
         }
         default: {
