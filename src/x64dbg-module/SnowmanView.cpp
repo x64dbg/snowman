@@ -63,10 +63,15 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
 
     //set architecture
 #ifdef _WIN64
-    image->setArchitecture(QLatin1String("x86-64"));
+    image->platform().setArchitecture(QLatin1String("x86-64"));
 #else //x86
-    image->setArchitecture(QLatin1String("i386"));
+    image->platform().setArchitecture(QLatin1String("i386"));
 #endif //_WIN64
+    
+    //set OS
+    image->platform().setOperatingSystem(nc::core::image::Platform::Windows);
+
+    //set demangler
     image->setDemangler(std::make_unique<DbgDemangler>());
 
     //create sections
