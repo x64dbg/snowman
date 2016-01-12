@@ -18,9 +18,11 @@ else()
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    file(GLOB X64DBG_LIBRARIES "${X64DBG_SDK_PATH}/x64bridge.lib")
+    file(GLOB X64BRIDGE_LIBRARY "${X64DBG_SDK_PATH}/x64bridge.lib")
+    file(GLOB X64DBG_LIBRARY "${X64DBG_SDK_PATH}/x64dbg.lib")
 else()
-    file(GLOB X64DBG_LIBRARIES "${X64DBG_SDK_PATH}/x32bridge.lib")
+    file(GLOB X64BRIDGE_LIBRARY "${X64DBG_SDK_PATH}/x32bridge.lib")
+    file(GLOB X64DBG_LIBRARY "${X64DBG_SDK_PATH}/x32dbg.lib")
 endif()
 
 # vim:set et sts=4 sw=4 nospell:

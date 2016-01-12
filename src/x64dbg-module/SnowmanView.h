@@ -11,17 +11,17 @@ class SnowmanView : public QWidget
 {
     Q_OBJECT
 public:
-    explicit SnowmanView(QWidget* parent = 0);
-    void decompileAt(duint start, duint end);
+    explicit SnowmanView(QWidget* parent = nullptr);
+    void decompileAt(duint start, duint end) const;
 
 protected:
-    void closeEvent(QCloseEvent* event);
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
-    void populateInstructionsContextMenu(QMenu* menu);
-    void populateCxxContextMenu(QMenu* menu);
-    void jumpFromInstructionsView();
-    void jumpFromCxxView();
+    void populateInstructionsContextMenu(QMenu* menu) const;
+    void populateCxxContextMenu(QMenu* menu) const;
+    void jumpFromInstructionsView() const;
+    void jumpFromCxxView() const;
 
 private:
     QMainWindow* mSnowmanMainWindow;

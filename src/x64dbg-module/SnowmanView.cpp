@@ -9,6 +9,7 @@
 #include <nc/core/image/Image.h>
 #include <nc/core/mangling/Demangler.h>
 #include <nc/core/image/Section.h>
+#include <nc/core/image/Relocation.h>
 #include <nc/gui/MainWindow.h>
 #include <nc/gui/Project.h>
 #include <nc/gui/InstructionsView.h>
@@ -20,6 +21,12 @@
 #include <QTreeView>
 #include <QMenuBar>
 #include <QPlainTextEdit>
+#include <_scriptapi_module.h>
+#include <_scriptapi_memory.h>
+#include <_scriptapi_symbol.h>
+#include <_plugins.h>
+
+using namespace Script;
 
 extern "C" __declspec(dllexport) SnowmanView* CreateSnowman(QWidget* parent)
 {
@@ -38,20 +45,18 @@ extern "C" __declspec(dllexport) void CloseSnowman(SnowmanView* snowman)
 
 class DbgByteSource : public nc::core::image::ByteSource
 {
-    virtual nc::ByteSize readBytes(nc::ByteAddr addr, void *buf, nc::ByteSize size) const
+    nc::ByteSize readBytes(nc::ByteAddr addr, void *buf, nc::ByteSize size) const override
     {
-        if(DbgMemRead(addr, (unsigned char*)buf, size))
-            return size;
-        else
-            return 0;
+        return Memory::Read(addr, buf, size, nullptr) ? size : 0;
     }
 };
 
 class DbgDemangler: public nc::core::mangling::Demangler {
     public:
 
-    virtual QString demangle(const QString &symbol) const
+    QString demangle(const QString &symbol) const override
     {
+        //TODO: properly demangle names
         return symbol;
     }
 };
@@ -75,27 +80,44 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
     image->setDemangler(std::make_unique<DbgDemangler>());
 
     //create sections
+    //TODO: properly add module sections
     auto section = std::make_unique<nc::core::image::Section>(".text", base, size);
     section->setReadable(true);
     section->setWritable(true);
     section->setExecutable(true);
     section->setCode(true);
     section->setData(true);
-    section->setBss(true);
     section->setAllocated(true);
     section->setExternalByteSource(std::make_unique<DbgByteSource>());
     image->addSection(std::move(section));
 
-    //add function names
-    // TODO
-
-    //add imported function names
-    // TODO
+    //add symbols
+    using namespace Script;
+    using namespace nc::core;
+    List<Symbol::SymbolInfo> symbols;
+    if(Symbol::GetList(&symbols))
+    {
+        for (auto i = 0; i < symbols.Count(); i++)
+        {
+            const auto & symbol = symbols[i];
+            auto modBase = Module::BaseFromName(symbol.mod);
+            if (!modBase)
+                continue;
+            auto va = modBase + symbol.rva;
+            auto name = QString::fromUtf8(symbol.name);
+            if (symbol.type != Symbol::Import)
+                image->addSymbol(std::make_unique<image::Symbol>(image::SymbolType::FUNCTION, name, va));
+            else
+                image->addRelocation(std::make_unique<image::Relocation>(
+                    va,
+                    image->addSymbol(std::make_unique<image::Symbol>(image::SymbolType::FUNCTION, name, boost::none))));
+        }
+    }
 
     return project;
 }
 
-void SnowmanView::decompileAt(duint start, duint end)
+void SnowmanView::decompileAt(duint start, duint end) const
 {
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
     duint pagesize;
@@ -110,6 +132,8 @@ SnowmanView::SnowmanView(QWidget* parent) : QWidget(parent)
 {
     nc::Branding branding = nc::branding();
     branding.setApplicationName("Snowman");
+    branding.setOrganizationDomain("x64dbg.com");
+    branding.setOrganizationName("x64dbg");
     nc::gui::MainWindow* mainWindow = new nc::gui::MainWindow(std::move(branding), parent);
     mainWindow->setAutoFillBackground(true);
     QVBoxLayout* layout = new QVBoxLayout();
@@ -148,7 +172,7 @@ void SnowmanView::closeEvent(QCloseEvent* event)
     mSnowmanMainWindow->close();
 }
 
-void SnowmanView::populateInstructionsContextMenu(QMenu* menu)
+void SnowmanView::populateInstructionsContextMenu(QMenu* menu) const
 {
     for (QAction* action : menu->actions())
     {
@@ -163,7 +187,7 @@ void SnowmanView::populateInstructionsContextMenu(QMenu* menu)
     }
 }
 
-void SnowmanView::populateCxxContextMenu(QMenu* menu)
+void SnowmanView::populateCxxContextMenu(QMenu* menu) const
 {
     for (QAction* action : menu->actions())
     {
@@ -178,7 +202,7 @@ void SnowmanView::populateCxxContextMenu(QMenu* menu)
     }
 }
 
-void SnowmanView::jumpFromInstructionsView()
+void SnowmanView::jumpFromInstructionsView() const
 {
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
     for(auto instruction : mainWindow->instructionsView()->selectedInstructions())
@@ -190,7 +214,7 @@ void SnowmanView::jumpFromInstructionsView()
     }
 }
 
-void SnowmanView::jumpFromCxxView()
+void SnowmanView::jumpFromCxxView() const
 {
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
     for(auto instruction : mainWindow->cxxView()->selectedInstructions())
