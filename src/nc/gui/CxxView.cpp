@@ -28,6 +28,8 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QPlainTextEdit>
+#include <QPalette>
+#include <QTextCursor>
 
 #include <nc/common/StringToInt.h>
 #include <nc/core/likec/Expression.h>
@@ -46,6 +48,9 @@ CxxView::CxxView(QWidget *parent):
     document_(nullptr)
 {
     highlighter_ = new CppSyntaxHighlighter(this);
+
+    textEdit()->setStyleSheet(QString("QPlainTextEdit { color: white; background-color: #272822; }"));
+    textEdit()->setFont(QFont("Consolas", 9));
 
     gotoLabelAction_ = new QAction(tr("Go to Label"), this);
     gotoLabelAction_->setShortcut(Qt::CTRL + Qt::Key_Backslash);

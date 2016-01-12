@@ -43,6 +43,7 @@ InspectorView::InspectorView(QWidget *parent):
     treeView_->setHeaderHidden(true);
     treeView_->setSelectionMode(QAbstractItemView::ExtendedSelection);
     treeView_->installEventFilter(this);
+    treeView_->setFont(QFont("Consolas", 8));
 
     setWidget(treeView_);
 }

@@ -42,6 +42,7 @@ InstructionsView::InstructionsView(QWidget *parent):
     treeView()->setSelectionBehavior(QAbstractItemView::SelectRows);
     treeView()->setSelectionMode(QAbstractItemView::ExtendedSelection);
     treeView()->setUniformRowHeights(true);
+    this->setDocumentFont(QFont("Consolas", 8));
 }
 
 void InstructionsView::setModel(InstructionsModel *model) {

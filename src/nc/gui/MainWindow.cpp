@@ -88,7 +88,7 @@ MainWindow::MainWindow(Branding branding, QWidget *parent):
 
     logToken_ = LogToken(logger);
 
-    settings_ = new QSettings(branding_.organizationName(), branding_.applicationName(), this);
+    settings_ = new QSettings("snowman.ini", QSettings::IniFormat, this);
     loadSettings();
 
     updateGuiState();

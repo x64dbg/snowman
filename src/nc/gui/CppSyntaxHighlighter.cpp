@@ -98,7 +98,15 @@ const char *cppKeywords[] = {
     "void", 
     "volatile", 
     "wchar_t", 
-    "while"
+    "while",
+    "int8_t",
+    "uint8_t",
+    "int16_t",
+    "uint16_t",
+    "int32_t",
+    "uint32_t",
+    "int64_t",
+    "uint64_t"
 };
 
 /* Highlighter state. */
@@ -115,16 +123,16 @@ enum State {
 
 CppSyntaxHighlighter::CppSyntaxHighlighter(QObject *parent): QSyntaxHighlighter(parent) {
     /* Init formats. */
-    mFormats[TEXT].               setForeground(Qt::black);
-    mFormats[SINGLE_LINE_COMMENT].setForeground(Qt::darkGreen);
-    mFormats[MULTI_LINE_COMMENT]. setForeground(Qt::darkGreen);
-    mFormats[KEYWORD].            setForeground(Qt::darkBlue);
+    mFormats[TEXT].               setForeground(QColor("#FFFFFF"));
+    mFormats[SINGLE_LINE_COMMENT].setForeground(QColor("#57A64A"));
+    mFormats[MULTI_LINE_COMMENT]. setForeground(QColor("#57A64A"));
+    mFormats[KEYWORD].            setForeground(QColor("#569CD6"));
     mFormats[KEYWORD].            setFontWeight(QFont::Bold);
-    mFormats[OPERATOR].           setForeground(Qt::darkGray);
-    mFormats[NUMBER].             setForeground(Qt::red);
-    mFormats[MACRO].              setForeground(Qt::darkCyan);
-    mFormats[STRING].             setForeground(Qt::blue);
-    mFormats[ESCAPE_CHAR].        setForeground(Qt::darkBlue);
+    mFormats[OPERATOR].           setForeground(QColor("#B4B4B4"));
+    mFormats[NUMBER].             setForeground(QColor("#B5CEA8"));
+    mFormats[MACRO].              setForeground(QColor("#BD63C5"));
+    mFormats[STRING].             setForeground(QColor("#D69D85"));
+    mFormats[ESCAPE_CHAR].        setForeground(QColor("#4EC9B3"));
         
     /* Init keywords. */
     foreach(const char *cppKeyword, cppKeywords)
@@ -132,7 +140,7 @@ CppSyntaxHighlighter::CppSyntaxHighlighter(QObject *parent): QSyntaxHighlighter(
 
     /* Init regexps. */
     mNumberRegexp   = QRegExp("\\b([0-9]+|0[xX][0-9a-fA-F]+|0[0-7]+)(\\.[0-9]+)?([eE][0-9]+)?\\b");
-    mOperatorRegexp = QRegExp("[\\(\\)\\[\\]{}\\:;,\\.!\\?/\\*-+<>%^&\\|=~]");
+    mOperatorRegexp = QRegExp("[\\(\\)\\[\\]{}\\:;,\\.!\\?/\\*\\-+<>%^&\\|=~]");
     mTextRegexp     = QRegExp("\\b[a-zA-Z_][a-zA-Z0-9_]+\\b");
 
     mIncludeRegexp  = QRegExp("^\\s*#\\s*include\\s*(<.+>|\\\".+\\\")");

@@ -8,7 +8,7 @@
 namespace nc {
 namespace gui {
 
-const auto highlightColor = Qt::lightGray;
+const auto highlightColor = QColor("#445D75");
 
 }} // namespace nc::gui
 
