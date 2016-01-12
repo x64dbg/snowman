@@ -761,7 +761,7 @@ void TreePrinter::doPrint(const While *node) {
 }
 
 void TreePrinter::doPrint(const InlineAssembly *node) {
-    out_ << "__asm__(\"" << node->code() << "\");";
+    out_ << "asm(\"" << node->code().trimmed() << "\");";
 }
 
 void TreePrinter::doPrint(const Switch *node) {
