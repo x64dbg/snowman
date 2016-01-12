@@ -492,15 +492,17 @@ public:
                 auto term = createTermForOperand(0);
                 if (auto constant = term->asConstant()) {
                     if (constant->value().value() == 3) {
-                        /* int 3 is debug break, remove it. */
-                        break;
+                        /* int 3 is debug break, TODO: emit compiler intrinsic. */
+                        _(std::make_unique<core::ir::InlineAssembly>());
                     }
                 }
-                _(std::make_unique<core::ir::InlineAssembly>());
+                else
+                    _(std::make_unique<core::ir::InlineAssembly>());
                 break;
             }
             case UD_Iint3: {
-                /* int 3 is a debug break, remove it. */
+                /* int 3 is debug break, TODO: emit compiler intrinsic. */
+                _(std::make_unique<core::ir::InlineAssembly>());
                 break;
             }
             case UD_Iimul: case UD_Imul: {
