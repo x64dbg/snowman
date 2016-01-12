@@ -44,6 +44,10 @@ namespace gui {
 DisassemblyDialog::DisassemblyDialog(QWidget *parent):
     QDialog(parent, Qt::Dialog)
 {
+#if QT_VERSION < QT_VERSION_CHECK(5,0,0)
+    setWindowFlags(Qt::Dialog | Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::MSWindowsFixedSizeDialogHint);
+#endif
+
     setWindowTitle(tr("Disassemble"));
 
     sectionComboBox_ = new QComboBox(this);

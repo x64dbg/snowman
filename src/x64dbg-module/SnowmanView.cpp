@@ -63,6 +63,9 @@ class DbgDemangler: public nc::core::mangling::Demangler {
 
 static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
 {
+    using namespace Script;
+    using namespace nc::core;
+
     auto project = std::make_unique<nc::gui::Project>();
     auto image = project->image().get();
 
@@ -80,20 +83,44 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
     image->setDemangler(std::make_unique<DbgDemangler>());
 
     //create sections
-    //TODO: properly add module sections
-    auto section = std::make_unique<nc::core::image::Section>(".text", base, size);
-    section->setReadable(true);
-    section->setWritable(true);
-    section->setExecutable(true);
-    section->setCode(true);
-    section->setData(true);
-    section->setAllocated(true);
-    section->setExternalByteSource(std::make_unique<DbgByteSource>());
-    image->addSection(std::move(section));
+    auto success = false;
+    auto moduleBase = Module::BaseFromAddr(base);
+    if (moduleBase)
+    {
+        List<Module::ModuleSectionInfo> sections;
+        if (Module::SectionListFromAddr(moduleBase, &sections))
+        {
+            success = true;
+            for (auto i = 0; i < sections.Count(); i++)
+            {
+                auto section = std::make_unique<nc::core::image::Section>(sections[i].name, sections[i].addr, sections[i].size);
+                section->setReadable(true);
+                section->setWritable(true);
+                section->setExecutable(true);
+                section->setCode(true);
+                section->setData(true);
+                section->setAllocated(true);
+                section->setExternalByteSource(std::make_unique<DbgByteSource>());
+                image->addSection(std::move(section));
+            }
+        }
+    }
+
+    //add a made-up section in case there was an error with the module sections.
+    if (!success)
+    {
+        auto section = std::make_unique<nc::core::image::Section>(".text", base, size);
+        section->setReadable(true);
+        section->setWritable(true);
+        section->setExecutable(true);
+        section->setCode(true);
+        section->setData(true);
+        section->setAllocated(true);
+        section->setExternalByteSource(std::make_unique<DbgByteSource>());
+        image->addSection(std::move(section));
+    }
 
     //add symbols
-    using namespace Script;
-    using namespace nc::core;
     List<Symbol::SymbolInfo> symbols;
     if(Symbol::GetList(&symbols))
     {

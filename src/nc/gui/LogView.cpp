@@ -35,6 +35,7 @@ LogView::LogView(QWidget *parent):
 {
     /* Limit log length. */
     textEdit()->document()->setMaximumBlockCount(10000);
+    textEdit()->setFont(QFont("Consolas", 8));
 
     /* Log Qt messages here. */
     connect(LogManager::instance(), SIGNAL(message(const QString &)), this, SLOT(log(const QString &)), Qt::QueuedConnection);

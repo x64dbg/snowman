@@ -43,6 +43,7 @@ SectionsView::SectionsView(QWidget *parent):
     treeView()->setSelectionMode(QAbstractItemView::ExtendedSelection);
     treeView()->setUniformRowHeights(true);
     treeView()->setSortingEnabled(true);
+    this->setDocumentFont(QFont("Consolas", 8));
 
     proxyModel_ = new QSortFilterProxyModel(this);
     proxyModel_->setSortRole(SectionsModel::SortRole);
