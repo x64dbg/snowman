@@ -1,13 +1,12 @@
 #include <nc/config.h>
 #include <nc/common/Branding.h>
-#include <nc/common/Foreach.h>
 #include <nc/common/make_unique.h>
 #include <nc/common/Types.h>
 #include <nc/core/image/ByteSource.h>
 #include <nc/core/Context.h>
 #include <nc/core/arch/Instruction.h>
 #include <nc/core/image/Image.h>
-#include <nc/core/mangling/Demangler.h>
+#include <nc/core/mangling/DefaultDemangler.h>
 #include <nc/core/image/Section.h>
 #include <nc/core/image/Relocation.h>
 #include <nc/gui/MainWindow.h>
@@ -17,14 +16,11 @@
 
 #include "SnowmanView.h"
 #include <QVBoxLayout>
-#include <QMessageBox>
-#include <QTreeView>
-#include <QMenuBar>
 #include <QPlainTextEdit>
+#include <QTreeView>
 #include <_scriptapi_module.h>
 #include <_scriptapi_memory.h>
 #include <_scriptapi_symbol.h>
-#include <_plugins.h>
 
 using namespace Script;
 
@@ -45,26 +41,28 @@ extern "C" __declspec(dllexport) void CloseSnowman(SnowmanView* snowman)
 
 class DbgByteSource : public nc::core::image::ByteSource
 {
+public:
+    explicit DbgByteSource(nc::ByteAddr lowerBound, nc::ByteAddr upperBound)
+        : mLowerBound(lowerBound),
+        mUpperBound(upperBound)
+    {
+    }
+
     nc::ByteSize readBytes(nc::ByteAddr addr, void *buf, nc::ByteSize size) const override
     {
+        if (addr < mLowerBound || addr >= mUpperBound)
+            return 0;
         return Memory::Read(addr, buf, size, nullptr) ? size : 0;
     }
-};
 
-class DbgDemangler: public nc::core::mangling::Demangler {
-    public:
-
-    QString demangle(const QString &symbol) const override
-    {
-        //TODO: properly demangle names
-        return symbol;
-    }
+private:
+    nc::ByteAddr mLowerBound;
+    nc::ByteAddr mUpperBound;
 };
 
 static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
 {
     using namespace Script;
-    using namespace nc::core;
 
     auto project = std::make_unique<nc::gui::Project>();
     auto image = project->image().get();
@@ -75,12 +73,12 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
 #else //x86
     image->platform().setArchitecture(QLatin1String("i386"));
 #endif //_WIN64
-    
+
     //set OS
     image->platform().setOperatingSystem(nc::core::image::Platform::Windows);
 
     //set demangler
-    image->setDemangler(std::make_unique<DbgDemangler>());
+    image->setDemangler(std::make_unique<nc::core::mangling::DefaultDemangler>());
 
     //create sections
     auto success = false;
@@ -93,14 +91,16 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
             success = true;
             for (auto i = 0; i < sections.Count(); i++)
             {
-                auto section = std::make_unique<nc::core::image::Section>(sections[i].name, sections[i].addr, sections[i].size);
+                auto sectionAddr = sections[i].addr;
+                auto sectionSize = sections[i].size;
+                auto section = std::make_unique<nc::core::image::Section>(sections[i].name, sectionAddr, sectionSize);
                 section->setReadable(true);
                 section->setWritable(true);
                 section->setExecutable(true);
                 section->setCode(true);
                 section->setData(true);
                 section->setAllocated(true);
-                section->setExternalByteSource(std::make_unique<DbgByteSource>());
+                section->setExternalByteSource(std::make_unique<DbgByteSource>(sectionAddr, sectionAddr + sectionSize));
                 image->addSection(std::move(section));
             }
         }
@@ -116,13 +116,13 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
         section->setCode(true);
         section->setData(true);
         section->setAllocated(true);
-        section->setExternalByteSource(std::make_unique<DbgByteSource>());
+        section->setExternalByteSource(std::make_unique<DbgByteSource>(base, base + size));
         image->addSection(std::move(section));
     }
 
     //add symbols
     List<Symbol::SymbolInfo> symbols;
-    if(Symbol::GetList(&symbols))
+    if (Symbol::GetList(&symbols))
     {
         for (auto i = 0; i < symbols.Count(); i++)
         {
@@ -132,12 +132,12 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
                 continue;
             auto va = modBase + symbol.rva;
             auto name = QString::fromUtf8(symbol.name);
-            if (symbol.type != Symbol::Import)
-                image->addSymbol(std::make_unique<image::Symbol>(image::SymbolType::FUNCTION, name, va));
+            if (symbol.type != Symbol::Import) //Function or Export
+                image->addSymbol(std::make_unique<nc::core::image::Symbol>(nc::core::image::SymbolType::FUNCTION, name, va));
             else
-                image->addRelocation(std::make_unique<image::Relocation>(
-                    va,
-                    image->addSymbol(std::make_unique<image::Symbol>(image::SymbolType::FUNCTION, name, boost::none))));
+                image->addRelocation(std::make_unique<nc::core::image::Relocation>(
+                va,
+                image->addSymbol(std::make_unique<nc::core::image::Symbol>(nc::core::image::SymbolType::FUNCTION, name, boost::none))));
         }
     }
 
@@ -151,7 +151,7 @@ void SnowmanView::decompileAt(duint start, duint end) const
     duint pagebase = DbgMemFindBaseAddr(start, &pagesize);
     mainWindow->open(MakeProject(pagebase, pagesize));
     mainWindow->project()->setName("Snowman");
-    mainWindow->project()->disassemble(mainWindow->project()->image().get(), start, end+1);
+    mainWindow->project()->disassemble(mainWindow->project()->image().get(), start, end + 1);
     mainWindow->project()->decompile();
 }
 
@@ -207,7 +207,7 @@ void SnowmanView::populateInstructionsContextMenu(QMenu* menu) const
             action->setShortcut(QKeySequence("Ctrl+F3"));
     }
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
-    if(!mainWindow->instructionsView()->selectedInstructions().empty())
+    if (!mainWindow->instructionsView()->selectedInstructions().empty())
     {
         menu->addSeparator();
         menu->addAction(mJumpFromInstructionsViewAction);
@@ -222,7 +222,7 @@ void SnowmanView::populateCxxContextMenu(QMenu* menu) const
             action->setShortcut(QKeySequence("Ctrl+F3"));
     }
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
-    if(!mainWindow->cxxView()->selectedInstructions().empty())
+    if (!mainWindow->cxxView()->selectedInstructions().empty())
     {
         menu->addSeparator();
         menu->addAction(mJumpFromCxxViewAction);
@@ -232,7 +232,7 @@ void SnowmanView::populateCxxContextMenu(QMenu* menu) const
 void SnowmanView::jumpFromInstructionsView() const
 {
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
-    for(auto instruction : mainWindow->instructionsView()->selectedInstructions())
+    for (auto instruction : mainWindow->instructionsView()->selectedInstructions())
     {
         duint addr = instruction->addr();
         DbgCmdExecDirect(QString().sprintf("disasm \"%p\"", addr).toUtf8().constData());
@@ -244,7 +244,7 @@ void SnowmanView::jumpFromInstructionsView() const
 void SnowmanView::jumpFromCxxView() const
 {
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
-    for(auto instruction : mainWindow->cxxView()->selectedInstructions())
+    for (auto instruction : mainWindow->cxxView()->selectedInstructions())
     {
         duint addr = instruction->addr();
         DbgCmdExecDirect(QString().sprintf("disasm \"%p\"", addr).toUtf8().constData());
