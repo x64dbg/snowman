@@ -5,6 +5,7 @@
 #include <nc/core/image/ByteSource.h>
 #include <nc/core/Context.h>
 #include <nc/core/arch/Instruction.h>
+#include <nc/core/arch/Architecture.h>
 #include <nc/core/image/Image.h>
 #include <nc/core/mangling/DefaultDemangler.h>
 #include <nc/core/image/Section.h>
@@ -85,7 +86,7 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
     auto moduleBase = Module::BaseFromAddr(base);
     if (moduleBase)
     {
-        List<Module::ModuleSectionInfo> sections;
+        BridgeList<Module::ModuleSectionInfo> sections;
         if (Module::SectionListFromAddr(moduleBase, &sections))
         {
             success = true;
@@ -121,7 +122,7 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
     }
 
     //add symbols
-    List<Symbol::SymbolInfo> symbols;
+    BridgeList<Symbol::SymbolInfo> symbols;
     if (Symbol::GetList(&symbols))
     {
         for (auto i = 0; i < symbols.Count(); i++)
@@ -137,7 +138,8 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
             else
                 image->addRelocation(std::make_unique<nc::core::image::Relocation>(
                 va,
-                image->addSymbol(std::make_unique<nc::core::image::Symbol>(nc::core::image::SymbolType::FUNCTION, name, boost::none))));
+                image->addSymbol(std::make_unique<nc::core::image::Symbol>(nc::core::image::SymbolType::FUNCTION, name, boost::none)),
+                image->platform().architecture()->bitness() / CHAR_BIT));
         }
     }
 

@@ -41,19 +41,10 @@ void VoidType::print(QTextStream &out) const {
 }
 
 void IntegerType::print(QTextStream &out) const {
-    if (size() == 8) {
-        if (isUnsigned()) {
-            out << "unsigned";
-        } else {
-            out << "signed";
-        }
-        out << " char";
-    } else {
-        if (isUnsigned()) {
-            out << 'u';
-        }
-        out << "int" << size() << "_t";
+    if (isUnsigned()) {
+        out << 'u';
     }
+    out << "int" << size() << "_t";
 }
 
 void FloatType::print(QTextStream &out) const {
