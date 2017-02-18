@@ -32,7 +32,15 @@ extern "C" __declspec(dllexport) SnowmanView* CreateSnowman(QWidget* parent)
 
 extern "C" __declspec(dllexport) void DecompileAt(SnowmanView* snowman, duint start, duint end)
 {
-    snowman->decompileAt(start, end);
+    SnowmanRange range;
+    range.start = start;
+    range.end = end;
+    snowman->decompileAt(&range, 1);
+}
+
+extern "C" __declspec(dllexport) void DecompileRanges(SnowmanView* snowman, const SnowmanRange* ranges, duint count)
+{
+    snowman->decompileAt(ranges, count);
 }
 
 extern "C" __declspec(dllexport) void CloseSnowman(SnowmanView* snowman)
@@ -148,16 +156,17 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
     return project;
 }
 
-void SnowmanView::decompileAt(duint start, duint end) const
+void SnowmanView::decompileAt(const SnowmanRange* ranges, duint count) const
 {
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
-    duint base = Module::BaseFromAddr(start);
+    duint base = Module::BaseFromAddr(ranges->start);
     duint size = Module::SizeFromAddr(base);
     if(!base || !size) //we are not inside a module
-        base = DbgMemFindBaseAddr(start, &size);
+        base = DbgMemFindBaseAddr(ranges->start, &size);
     mainWindow->open(MakeProject(base, size));
     mainWindow->project()->setName("Snowman");
-    mainWindow->project()->disassemble(mainWindow->project()->image().get(), start, end + 1);
+    for(duint i = 0; i < count; i++)
+        mainWindow->project()->disassemble(mainWindow->project()->image().get(), ranges[i].start, ranges[i].end + 1);
     mainWindow->project()->decompile();
 }
 

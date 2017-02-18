@@ -7,12 +7,18 @@
 #include <QMenu>
 #include <bridgemain.h>
 
+struct SnowmanRange
+{
+    duint start;
+    duint end;
+};
+
 class SnowmanView : public QWidget
 {
     Q_OBJECT
 public:
     explicit SnowmanView(QWidget* parent = nullptr);
-    void decompileAt(duint start, duint end) const;
+    void decompileAt(const SnowmanRange* ranges, duint count) const;
 
 protected:
     void closeEvent(QCloseEvent* event) override;
@@ -28,8 +34,5 @@ private:
     QAction* mJumpFromInstructionsViewAction;
     QAction* mJumpFromCxxViewAction;
 };
-
-extern "C" __declspec(dllexport) SnowmanView* CreateSnowman(QWidget* parent);
-extern "C" __declspec(dllexport) void DecompileAt(SnowmanView* snowman, duint start, duint end);
 
 #endif // SNOWMANVIEW_H
