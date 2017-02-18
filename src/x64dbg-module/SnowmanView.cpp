@@ -53,7 +53,9 @@ public:
     {
         if (addr < mLowerBound || addr >= mUpperBound)
             return 0;
-        return Memory::Read(addr, buf, size, nullptr) ? size : 0;
+        duint sizeRead = 0;
+        Memory::Read(addr, buf, size, &sizeRead);
+        return sizeRead;
     }
 
 private:
