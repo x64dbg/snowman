@@ -51,7 +51,7 @@ public:
 
     nc::ByteSize readBytes(nc::ByteAddr addr, void *buf, nc::ByteSize size) const override
     {
-        if (addr < mLowerBound || addr >= mUpperBound)
+        if (addr < mLowerBound || addr + size >= mUpperBound)
             return 0;
         duint sizeRead = 0;
         Memory::Read(addr, buf, size, &sizeRead);
@@ -135,13 +135,13 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
                 continue;
             auto va = modBase + symbol.rva;
             auto name = QString::fromUtf8(symbol.name);
-            if (symbol.type != Symbol::Import) //Function or Export
-                image->addSymbol(std::make_unique<nc::core::image::Symbol>(nc::core::image::SymbolType::FUNCTION, name, va));
-            else
+            if(symbol.type == Symbol::Import) //IAT entry
                 image->addRelocation(std::make_unique<nc::core::image::Relocation>(
                 va,
                 image->addSymbol(std::make_unique<nc::core::image::Symbol>(nc::core::image::SymbolType::FUNCTION, name, boost::none)),
                 image->platform().architecture()->bitness() / CHAR_BIT));
+            else //Function or Export
+                image->addSymbol(std::make_unique<nc::core::image::Symbol>(nc::core::image::SymbolType::FUNCTION, name, va));
         }
     }
 
