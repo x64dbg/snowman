@@ -151,9 +151,11 @@ static std::unique_ptr<nc::gui::Project> MakeProject(duint base, duint size)
 void SnowmanView::decompileAt(duint start, duint end) const
 {
     nc::gui::MainWindow* mainWindow = (nc::gui::MainWindow*)mSnowmanMainWindow;
-    duint pagesize;
-    duint pagebase = DbgMemFindBaseAddr(start, &pagesize);
-    mainWindow->open(MakeProject(pagebase, pagesize));
+    duint base = Module::BaseFromAddr(start);
+    duint size = Module::SizeFromAddr(base);
+    if(!base || !size) //we are not inside a module
+        base = DbgMemFindBaseAddr(start, &size);
+    mainWindow->open(MakeProject(base, size));
     mainWindow->project()->setName("Snowman");
     mainWindow->project()->disassemble(mainWindow->project()->image().get(), start, end + 1);
     mainWindow->project()->decompile();
