@@ -121,18 +121,23 @@ enum State {
 } // namespace `anonymous-namespace`
 
 
-CppSyntaxHighlighter::CppSyntaxHighlighter(QObject *parent): QSyntaxHighlighter(parent) {
+CppSyntaxHighlighter::CppSyntaxHighlighter(QSettings* settings, QObject *parent): QSyntaxHighlighter(parent) {
     /* Init formats. */
-    mFormats[TEXT].               setForeground(QColor("#FFFFFF"));
-    mFormats[SINGLE_LINE_COMMENT].setForeground(QColor("#57A64A"));
-    mFormats[MULTI_LINE_COMMENT]. setForeground(QColor("#57A64A"));
-    mFormats[KEYWORD].            setForeground(QColor("#569CD6"));
+    auto getColor = [settings](const char* key, QString defColor) {
+        if(!settings->contains(key))
+            settings->setValue(key, defColor);
+        return QColor(settings->value(key).toString());
+    };
+    mFormats[TEXT].               setForeground(getColor("TEXT", "#FFFFFF"));
+    mFormats[SINGLE_LINE_COMMENT].setForeground(getColor("SINGLE_LINE_COMMENT", "#57A64A"));
+    mFormats[MULTI_LINE_COMMENT]. setForeground(getColor("MULTI_LINE_COMMENT", "#57A64A"));
+    mFormats[KEYWORD].            setForeground(getColor("KEYWORD", "#569CD6"));
     mFormats[KEYWORD].            setFontWeight(QFont::Bold);
-    mFormats[OPERATOR].           setForeground(QColor("#B4B4B4"));
-    mFormats[NUMBER].             setForeground(QColor("#B5CEA8"));
-    mFormats[MACRO].              setForeground(QColor("#BD63C5"));
-    mFormats[STRING].             setForeground(QColor("#D69D85"));
-    mFormats[ESCAPE_CHAR].        setForeground(QColor("#4EC9B3"));
+    mFormats[OPERATOR].           setForeground(getColor("OPERATOR", "#B4B4B4"));
+    mFormats[NUMBER].             setForeground(getColor("NUMBER", "#B5CEA8"));
+    mFormats[MACRO].              setForeground(getColor("MACRO", "#BD63C5"));
+    mFormats[STRING].             setForeground(getColor("STRING", "#D69D85"));
+    mFormats[ESCAPE_CHAR].        setForeground(getColor("ESCAPE_CHAR", "#4EC9B3"));
         
     /* Init keywords. */
     foreach(const char *cppKeyword, cppKeywords)

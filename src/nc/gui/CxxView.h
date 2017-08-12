@@ -31,6 +31,8 @@
 
 #include "TextView.h"
 
+class QSettings;
+
 namespace nc {
 
 namespace core {
@@ -90,7 +92,7 @@ public:
      *
      * \param[in] parent Pointer to the parent widget. Can be nullptr.
      */
-    explicit CxxView(QWidget *parent = nullptr);
+    explicit CxxView(QSettings* settings, QWidget *parent = nullptr);
 
     /**
      * \return Pointer to the C++ document being viewed. Can be nullptr.
