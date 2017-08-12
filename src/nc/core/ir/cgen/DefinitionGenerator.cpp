@@ -192,7 +192,7 @@ likec::LabelDeclaration *DefinitionGenerator::makeLabel(const BasicBlock *basicB
     if (!result) {
         auto label = std::make_unique<likec::LabelDeclaration>(
             basicBlock->address() ?
-                QString("addr_0x%1_%2").arg(basicBlock->address().get(), 0, 16).arg(labels_.size()) :
+                QString("addr_%1_%2").arg(basicBlock->address().get(), 0, 16).arg(labels_.size()) :
                 QString("label_%1").arg(labels_.size())
             );
         result = label.get();
@@ -1287,9 +1287,15 @@ bool DefinitionGenerator::computeIsSubstituted(const Term *write) {
 
     assert(nuses >= 1 && "Live write must have at least one live read.");
 
-    if (nuses > 1 && (source->kind() == Term::UNARY_OPERATOR || source->kind() == Term::BINARY_OPERATOR)) {
-        /* We do not want to substitute complex expressions multiple times. */
-        return false;
+    if (nuses > 1) {
+        auto sourceSubstitute = getSubstitute(source);
+        if (!sourceSubstitute) {
+            sourceSubstitute = source;
+        }
+        if (sourceSubstitute->kind() == Term::UNARY_OPERATOR || sourceSubstitute->kind() == Term::BINARY_OPERATOR) {
+            /* We do not want to substitute complex expressions multiple times. */
+            return false;
+        }
     }
 
     return true;
