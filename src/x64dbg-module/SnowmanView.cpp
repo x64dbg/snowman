@@ -19,6 +19,7 @@
 #include <QVBoxLayout>
 #include <QPlainTextEdit>
 #include <QTreeView>
+#include <QApplication>
 #include <_scriptapi_module.h>
 #include <_scriptapi_memory.h>
 #include <_scriptapi_symbol.h>
@@ -206,6 +207,42 @@ SnowmanView::SnowmanView(QWidget* parent) : QWidget(parent)
 
     connect(mainWindow->instructionsView(), SIGNAL(contextMenuCreated(QMenu*)), this, SLOT(populateInstructionsContextMenu(QMenu*)));
     connect(mainWindow->cxxView(), SIGNAL(contextMenuCreated(QMenu*)), this, SLOT(populateCxxContextMenu(QMenu*)));
+
+    QString style;
+    auto stylePath = QString("%1/snowman.css").arg(QCoreApplication::applicationDirPath());
+    QFile f(stylePath);
+    if(f.open(QFile::ReadOnly | QFile::Text))
+    {
+        QTextStream in(&f);
+        style = in.readAll();
+        f.close();
+    }
+    else
+    {
+        style = R"(nc--gui--CxxView QPlainTextEdit {
+    color: white;
+    background-color: #272822;
+}
+
+nc--gui--CxxFormatting {
+  qproperty-textColor: #FFFFFF;
+  qproperty-singleLineCommentColor: #57A64A;
+  qproperty-multiLineLineCommentColor: #57A64A;
+  qproperty-keywordColor: #569CD6;
+  qproperty-operatorColor: #B4B4B4;
+  qproperty-numberColor: #B5CEA8;
+  qproperty-macroColor: #BD63C5;
+  qproperty-stringColor: #D69D85;
+  qproperty-escapeCharColor: #4EC9B3;
+})";
+        if(f.open(QIODevice::WriteOnly | QIODevice::Text))
+        {
+            QTextStream out(&f);
+            out << style;
+            f.close();
+        }
+    }
+    qApp->setStyleSheet(QString("%1\n%2").arg(qApp->styleSheet(), style));
 }
 
 void SnowmanView::closeEvent(QCloseEvent* event)
