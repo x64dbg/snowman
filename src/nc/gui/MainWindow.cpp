@@ -77,8 +77,6 @@ MainWindow::MainWindow(Branding branding, QWidget *parent):
     setDockNestingEnabled(true);
     setTabPosition(Qt::AllDockWidgetAreas, QTabWidget::North);
 
-    settings_ = new QSettings("snowman.ini", QSettings::IniFormat, this);
-
     createWidgets();
     createActions();
     createMenus();
@@ -90,6 +88,7 @@ MainWindow::MainWindow(Branding branding, QWidget *parent):
 
     logToken_ = LogToken(logger);
 
+    settings_ = new QSettings("snowman.ini", QSettings::IniFormat, this);
     loadSettings();
 
     updateGuiState();
@@ -117,7 +116,7 @@ void MainWindow::createWidgets() {
     connect(instructionsView_, SIGNAL(decompileSelectedInstructions()), this, SLOT(decompileSelectedInstructions()));
     connect(instructionsView_, SIGNAL(contextMenuCreated(QMenu *)), this, SLOT(populateInstructionsContextMenu(QMenu *)));
 
-    cxxView_ = new CxxView(settings_, this);
+    cxxView_ = new CxxView(this);
     cxxView_->setDocument(new CxxDocument(this));
     cxxView_->setFeatures(QDockWidget::DockWidgetFeatures());
     cxxView_->setObjectName("CxxView");

@@ -29,7 +29,6 @@
 
 #include <QSyntaxHighlighter>
 #include <QSet>
-#include <QSettings>
 
 QT_BEGIN_NAMESPACE
 class QTextDocument;
@@ -65,7 +64,7 @@ public:
      * 
      * \param[in] parent Pointer to the parent object. Can be nullptr.
      */
-    explicit CppSyntaxHighlighter(QSettings* settings, QObject *parent = nullptr);
+    explicit CppSyntaxHighlighter(QObject *parent = nullptr);
 
     /**
      * Virtual destructor.

@@ -43,15 +43,13 @@
 
 namespace nc { namespace gui {
 
-CxxView::CxxView(QSettings* settings, QWidget *parent):
+CxxView::CxxView(QWidget *parent):
     TextView(tr("C++"), parent),
     document_(nullptr)
 {
-    highlighter_ = new CppSyntaxHighlighter(settings, this);
+    highlighter_ = new CppSyntaxHighlighter(this);
 
-    if(!settings->contains("BACKGROUND"))
-        settings->setValue("BACKGROUND", "#272822");
-    textEdit()->setStyleSheet(QString("QPlainTextEdit { color: white; background-color: %1; }").arg(settings->value("BACKGROUND").toString()));
+    textEdit()->setStyleSheet(QString("QPlainTextEdit { color: white; background-color: #272822; }"));
     textEdit()->setFont(QFont("Consolas", 9));
 
     gotoLabelAction_ = new QAction(tr("Go to Label"), this);
