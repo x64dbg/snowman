@@ -208,18 +208,7 @@ SnowmanView::SnowmanView(QWidget* parent) : QWidget(parent)
     connect(mainWindow->instructionsView(), SIGNAL(contextMenuCreated(QMenu*)), this, SLOT(populateInstructionsContextMenu(QMenu*)));
     connect(mainWindow->cxxView(), SIGNAL(contextMenuCreated(QMenu*)), this, SLOT(populateCxxContextMenu(QMenu*)));
 
-    QString style;
-    auto stylePath = QString("%1/snowman.css").arg(QCoreApplication::applicationDirPath());
-    QFile f(stylePath);
-    if(f.open(QFile::ReadOnly | QFile::Text))
-    {
-        QTextStream in(&f);
-        style = in.readAll();
-        f.close();
-    }
-    else
-    {
-        style = R"(nc--gui--CxxView QPlainTextEdit {
+    qApp->setStyleSheet(R"(nc--gui--CxxView QPlainTextEdit {
     color: white;
     background-color: #272822;
 }
@@ -234,15 +223,8 @@ nc--gui--CxxFormatting {
   qproperty-macroColor: #BD63C5;
   qproperty-stringColor: #D69D85;
   qproperty-escapeCharColor: #4EC9B3;
-})";
-        if(f.open(QIODevice::WriteOnly | QIODevice::Text))
-        {
-            QTextStream out(&f);
-            out << style;
-            f.close();
-        }
-    }
-    qApp->setStyleSheet(QString("%1\n%2").arg(qApp->styleSheet(), style));
+}
+)" + qApp->styleSheet());
 }
 
 void SnowmanView::closeEvent(QCloseEvent* event)
