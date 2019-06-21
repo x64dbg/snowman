@@ -224,15 +224,15 @@ public:
                         operand(0) ^= (temporary(64) & constant(0x00FF00FF00FF00FFUL)) << constant(8)
                             | unsigned_(temporary(64) & constant(0xFF00FF00FF00FF00UL)) >> constant(8)
                     ];
+                } else if (operand(0).size() == 16) {
+                    operand(0) ^= undefined();
                 } else {
                     unreachable();
                 }
                 break;
             }
             case UD_Iand: {
-                if (operandsAreTheSame(0, 1)) {
-                    _[operand(0) ^= operand(0)];
-                } else {
+                if (!operandsAreTheSame(0, 1)) {
                     _[operand(0) ^= operand(0) & operand(1)];
                 }
 
@@ -387,6 +387,7 @@ public:
                             less_or_equal    ^= signed_(left) <= right,
                             below_or_equal   ^= unsigned_(left) <= right
                         ];
+                        break;
                     }
                     case UD_Imovsb: case UD_Imovsw: case UD_Imovsd: case UD_Imovsq: {
                         repPrefixIsValid = true;
@@ -857,7 +858,15 @@ public:
                 break;
             }
             case UD_Imovzx: {
-                _[operand(0) ^= zero_extend(operand(1))];
+                auto operand0 = operand(0);
+                auto operand1 = operand(1);
+
+                if (operand0.size() > operand1.size()) {
+                    _[std::move(operand0) ^= zero_extend(std::move(operand1))];
+                } else {
+                    /* Yes, movzww exists: https://github.com/yegord/snowman/issues/153 */
+                    _[std::move(operand0) ^= std::move(operand1)];
+                }
                 break;
             }
             case UD_Ineg: {
@@ -883,9 +892,7 @@ public:
                 break;
             }
             case UD_Ior: {
-                if (operandsAreTheSame(0, 1)) {
-                    _[operand(0) ^= operand(0)];
-                } else {
+                if (!operandsAreTheSame(0, 1)) {
                     _[operand(0) ^= operand(0) | operand(1)];
                 }
 

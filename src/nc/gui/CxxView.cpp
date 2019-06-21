@@ -47,7 +47,7 @@ CxxView::CxxView(QWidget *parent):
     TextView(tr("C++"), parent),
     document_(nullptr)
 {
-    highlighter_ = new CppSyntaxHighlighter(this);
+    highlighter_ = new CppSyntaxHighlighter(this, new CxxFormatting(this));
 
     textEdit()->setFont(QFont("Consolas", 9));
 
@@ -104,6 +104,10 @@ void CxxView::setDocument(CxxDocument *document) {
     textEdit()->blockSignals(false);
 
     updateSelection();
+}
+
+void CxxView::rehighlight() {
+    highlighter_->rehighlight();
 }
 
 void CxxView::updateSelection() {
@@ -165,7 +169,7 @@ boost::optional<ConstantValue> CxxView::getIntegerUnderCursor() const {
     cursor.movePosition(QTextCursor::StartOfWord);
     cursor.movePosition(QTextCursor::EndOfWord, QTextCursor::KeepAnchor);
 
-    if (auto value = stringToInt<ConstantValue>(cursor.selectedText())) {
+    if (auto value = stringToInt<ConstantValue>(cursor.selectedText(), 0)) {
         return *value;
     }
     return boost::none;

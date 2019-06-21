@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.11)
+cmake_minimum_required(VERSION 3.7)
 project(Decompiler C CXX)
 
 enable_testing()
@@ -138,11 +138,16 @@ if(${NC_QT5})
     macro(qt4_wrap_cpp)
     endmacro()
 
-    set(QT_LIBRARIES Qt5::Core Qt5::Widgets)
+    set(NC_QT_CORE Qt5::Core)
+    set(NC_QT_WIDGETS Qt5::Widgets)
 else()
     # Find Qt4.
     find_package(Qt4 REQUIRED QtCore QtGui)
     include(${QT_USE_FILE})
+
+    # Too lazy to filter the right libraries from ${QT_LIBRARIES}.
+    set(NC_QT_CORE ${QT_LIBRARIES})
+    set(NC_QT_WIDGETS ${QT_LIBRARIES})
 
     # This is used to produce standalone bundles on Windows.
     include(DeployQt4)
@@ -156,7 +161,7 @@ endif()
 find_package(IDA)
 
 # Option for building IDA plug-in.
-set(IDA_PLUGIN_ENABLED ${IDA_SDK_FOUND} CACHE BOOL "Build IDA plug-in.")
+set(IDA_PLUGIN_ENABLED ${IDA_SDK_DIR} CACHE BOOL "Build IDA plug-in.")
 
 # Position-independent code is necessary for the IDA plug-in.
 if(${IDA_PLUGIN_ENABLED})
