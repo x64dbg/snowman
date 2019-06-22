@@ -1,6 +1,8 @@
 Snowman
 =======
 
+image:https://ci.appveyor.com/api/projects/status/tec5nqkq0r4krxyp?svg=true[image]
+
 image:https://i.imgur.com/F0kpXRM.png[image]
 
 http://derevenets.com/[Snowman] is a native code to C/C++ decompiler, supporting x86, AMD64, and ARM architectures.

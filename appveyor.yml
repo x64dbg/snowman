@@ -1,0 +1,31 @@
+version: '{build}'
+
+image: Visual Studio 2013
+
+environment:
+  MSBUILD_FLAGS: /verbosity:minimal /maxcpucount
+  BOOST_INCLUDEDIR: C:\Libraries\boost\boost
+  BOOST_ROOT: C:\Libraries\boost
+  Boost_DIR: C:\Libraries\boost
+  matrix:
+  - CMAKE_GENERATOR: "Visual Studio 12 2013"
+    QT5: C:\Qt\5.6\msvc2013
+  - CMAKE_GENERATOR: "Visual Studio 12 2013 Win64"
+    QT5: C:\Qt\5.6\msvc2013_64
+
+matrix:
+  fast_finish: true
+
+install:
+- curl -O -L https://github.com/x64dbg/snowman/releases/download/build-files/pluginsdk.zip 1>nul
+- 7z x -y -o. pluginsdk.zip 1>nul
+
+before_build:
+- set Path=%QT5%\bin;%Path%
+- cmake -Hsrc -Bbuild -G "%CMAKE_GENERATOR%" "-DCMAKE_PREFIX_PATH=%QT5%" "-DX64DBG_SDK_PATH=pluginsdk" -DNC_QT5=ON
+
+build_script:
+- cmake --build build --config Release -- %MSBUILD_FLAGS%
+
+artifacts:
+- path: build/x64dbg-module/Release/snowman.dp*
