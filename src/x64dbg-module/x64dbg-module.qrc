@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/icons">
+        <file>images/snowman.png</file>
+        <file>images/decompile_function.png</file>
+        <file>images/decompile_selection.png</file>
+    </qresource>
+</RCC>

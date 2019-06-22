@@ -26,29 +26,6 @@
 
 using namespace Script;
 
-extern "C" __declspec(dllexport) SnowmanView* CreateSnowman(QWidget* parent)
-{
-    return new SnowmanView(parent);
-}
-
-extern "C" __declspec(dllexport) void DecompileAt(SnowmanView* snowman, duint start, duint end)
-{
-    SnowmanRange range;
-    range.start = start;
-    range.end = end;
-    snowman->decompileAt(&range, 1);
-}
-
-extern "C" __declspec(dllexport) void DecompileRanges(SnowmanView* snowman, const SnowmanRange* ranges, duint count)
-{
-    snowman->decompileAt(ranges, count);
-}
-
-extern "C" __declspec(dllexport) void CloseSnowman(SnowmanView* snowman)
-{
-    snowman->close();
-}
-
 class DbgByteSource : public nc::core::image::ByteSource
 {
 public:
