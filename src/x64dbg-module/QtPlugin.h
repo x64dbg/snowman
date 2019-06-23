@@ -7,12 +7,12 @@ namespace QtPlugin
 {
     void Init();
     void Setup();
-	void WaitForSetup();
+    void WaitForSetup();
     void Stop();
-	void WaitForStop();
+    void WaitForStop();
     void ShowTab();
-	void MenuPrepare(int hMenu);
-	void MenuEntry(int hMenu);
+    void MenuPrepare(int hMenu);
+    void MenuEntry(int hMenu);
 } //QtPlugin
 
 #endif // QTPLUGIN_H
