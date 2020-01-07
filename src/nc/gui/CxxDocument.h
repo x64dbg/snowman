@@ -141,7 +141,7 @@ public:
      * \param declaration Valid pointer to a declaration.
      * \param newName New name.
      */
-    void rename(const core::likec::Declaration *declaration, const QString &newName);
+    void rename(const core::likec::Declaration *declaration, const QString &newName, QTextCursor &cursor);
 
     /**
      * \return Text in the given range.
@@ -172,7 +172,7 @@ private Q_SLOTS:
 
 private:
     void computeReverseMappings(const RangeNode *rangeNode);
-    void replaceText(const Range<int> &range, const QString &text);
+    void replaceText(const Range<int> &range, const QString &text, QTextCursor &cursor);
 };
 
 }} // namespace nc::gui
