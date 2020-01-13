@@ -183,11 +183,11 @@ void CxxDocument::onContentsChange(int position, int charsRemoved, int charsAdde
     }
 }
 
-void CxxDocument::rename(const core::likec::Declaration *declaration, const QString &newName) {
+void CxxDocument::rename(const core::likec::Declaration *declaration, const QString &newName, QTextCursor &cursor) {
     assert(declaration != nullptr);
 
     foreach (auto use, getUses(declaration)) {
-        replaceText(getRange(use), newName);
+        replaceText(getRange(use), newName, cursor);
     }
 }
 
@@ -198,8 +198,7 @@ QString CxxDocument::getText(const Range<int> &range) const {
     return cursor.selectedText();
 }
 
-void CxxDocument::replaceText(const Range<int> &range, const QString &text) {
-    QTextCursor cursor(this);
+void CxxDocument::replaceText(const Range<int> &range, const QString &text, QTextCursor &cursor) {
     cursor.beginEditBlock();
     cursor.setPosition(range.end());
     cursor.movePosition(QTextCursor::Left, QTextCursor::KeepAnchor, range.length());

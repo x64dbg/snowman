@@ -339,8 +339,9 @@ void CxxView::rename() {
     if (auto declaration = getDeclarationOfIdentifierUnderCursor()) {
         auto oldName = document()->getText(document()->getRange(getNodeUnderCursor()));
         auto newName = QInputDialog::getText(this, tr("Rename"), tr("New name:"), QLineEdit::Normal, oldName);
-        if (!newName.isEmpty()) {
-            document()->rename(declaration, newName);
+        if (!newName.trimmed().isEmpty()) {
+            QTextCursor cursor = textEdit()->textCursor();
+            document()->rename(declaration, newName, cursor);
         }
     }
 }
